@@ -1,5 +1,6 @@
 import { useState } from "react";
 import server from "./server";
+import { Data } from "./data";
 
 function Transfer({ address, setBalance }) {
   const [sendAmount, setSendAmount] = useState("");
@@ -24,6 +25,7 @@ function Transfer({ address, setBalance }) {
     }
   }
 
+  
   return (
     <form className="container transfer" onSubmit={transfer}>
       <h1>Send Transaction</h1>
@@ -39,8 +41,15 @@ function Transfer({ address, setBalance }) {
 
       <label>
         Recipient
+        <select value={recipient} onChange={setValue(setRecipient)}>
+          <option value={null}>--Please choose an recipient--</option>
+          {Data.address.map((e) => e.address != address ?
+          <option  key={e.address} value={e.address}>{e.name}</option> : null
+          )};
+        </select>
+
         <input
-          placeholder="Type an address, for example: 0x2"
+          placeholder="Recipient Address"
           value={recipient}
           onChange={setValue(setRecipient)}
         ></input>

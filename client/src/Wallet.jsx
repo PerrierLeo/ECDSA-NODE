@@ -3,6 +3,7 @@ import { keccak256 } from "ethereum-cryptography/keccak";
 import { utf8ToBytes } from "ethereum-cryptography/utils";
 import { toHex } from "ethereum-cryptography/utils";
 import { secp256k1 } from "ethereum-cryptography/secp256k1.js";
+import { Data } from "./data";
 
 
 function hashMessage(data) {
@@ -26,24 +27,25 @@ function recoveryKey(privateKey, signature, msgHash) {
 
 function getAddress(publicKey) {
   //convert publicKey into wallet Address
-  console.log(toHex(keccak256(publicKey).slice(-20)));
+  return toHex(keccak256(publicKey).slice(-20));
 }
 
 
-
 function Wallet({ address, setAddress, balance, setBalance, privateKey, setPrivateKey }) {
-  
+
   async function onChange(evt) {
-    console.log(evt.target.value);
-    setPrivateKey(evt.target.value);
-    const address = toHex(secp256k1.getPublicKey(privateKey.slice(1), false));
-    setAddress(address.slice(-20));
-     if (address) {
+    const privateKey = evt.target.value;
+    setPrivateKey(privateKey);
+    //convert private to public
+    const publicKey = secp256k1.getPublicKey(privateKey.slice(1));
+    //convet public to address
+    const address = toHex(keccak256(publicKey).slice(-20));
+    setAddress(address);
+    if (address) {
       const {
         data: { balance },
       } = await server.get(`balance/${address}`);
-       setBalance(balance);
-       console.log('aaa', balance);
+      setBalance(balance);
     } else {
       setBalance(0);
     }
@@ -56,16 +58,19 @@ function Wallet({ address, setAddress, balance, setBalance, privateKey, setPriva
         Private Key
         <select value={privateKey} onChange={onChange}>
           <option >--Please choose an identity--</option>
-          <option value="06c912fd37cdf5c81d4c0adb1ab7fa822ed253ab0ad9aa18d77257c88b29b718e">John Doe</option>
-          <option value="06c912fd37cdf5c81d4c0adb1ab7fa822ed253ab0ad9aa18d77257c88b29b718f">Max Erman</option>
-          <option value="06c912fd37cdf5c81d4c0adb1ab7fa822ed253ab0ad9aa18d77257c88b29b718g">Leo Leon</option>
+           {Data.client.map((e) => 
+          <option key={e.privateKey} value={e.privateKey}>{e.name}</option>
+          )};
         </select>
       </label>
-
       <label>
         Wallet Address
-        <input disabled placeholder="Type an address, for example: 0x1" value={address.slice(-20)} ></input>
       </label>
+      <input
+        disabled
+          placeholder="Wallet Address"
+          value={address}
+        />
 
       <div className="balance">Balance: {balance}</div>
     </div>
