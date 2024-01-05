@@ -1,34 +1,23 @@
 import server from "./server";
-import { keccak256 } from "ethereum-cryptography/keccak";
-import { utf8ToBytes } from "ethereum-cryptography/utils";
+import { getAddress } from "./functions/crypto.functions";
 import { toHex } from "ethereum-cryptography/utils";
 import { secp256k1 } from "ethereum-cryptography/secp256k1.js";
 import { Data } from "./data";
 
 
-function hashMessage(data) {
-  //return hash message
-  return keccak256(utf8ToBytes(data));
-}
 
-function signMessage(dataToSign, privateKey) {
-  //return signature
-  return secp256k1.sign(hashMessage(dataToSign), privateKey, { recovery: 1 });
-}
+
 
 
 function recoveryKey(privateKey, signature, msgHash) {
   //return publicKey from privateKey
-  const publicKey = secp256k1.getPublicKey(privateKey, false);
+  const publicKey = secp256k1.getPublicKey(privateKey);
   //verify if publicKey from hashData match with publicKey from privateKey;
   const recovered = secp256k1.verify(signature, msgHash, toHex(publicKey));
   return recovered;
 }
 
-function getAddress(publicKey) {
-  //convert publicKey into wallet Address
-  return toHex(keccak256(publicKey).slice(-20));
-}
+
 
 
 function Wallet({ address, setAddress, balance, setBalance, privateKey, setPrivateKey }) {
@@ -38,8 +27,8 @@ function Wallet({ address, setAddress, balance, setBalance, privateKey, setPriva
     setPrivateKey(privateKey);
     //convert private to public
     const publicKey = secp256k1.getPublicKey(privateKey.slice(1));
-    //convet public to address
-    const address = toHex(keccak256(publicKey).slice(-20));
+    //convert public to address
+    const address = toHex(getAddress(publicKey));
     setAddress(address);
     if (address) {
       const {

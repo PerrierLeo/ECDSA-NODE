@@ -1,8 +1,9 @@
 import { useState } from "react";
 import server from "./server";
 import { Data } from "./data";
+import {  signMessage } from "./functions/crypto.functions";
 
-function Transfer({ address, setBalance }) {
+function Transfer({ address, setBalance, privateKey }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
 
@@ -11,17 +12,34 @@ function Transfer({ address, setBalance }) {
   async function transfer(evt) {
     evt.preventDefault();
 
+    const transaction = {
+        from: address,
+        to: recipient,
+        amount: parseInt(sendAmount),
+      }
+
+    //Sign transaction
+    const sig = signMessage(Uint8Array.from(transaction), privateKey.slice(1));
+    const sigParsed = JSON.parse(JSON.stringify(sig, (value) =>
+            typeof value === 'bigint'
+                ? value.toString()
+                : value // return everything else unchanged
+        ));
+    
+    //send transaction
+    const signedTransaction = {
+      transaction, sigParsed
+    }
+
+
     try {
       const {
         data: { balance },
-      } = await server.post(`send`, {
-        sender: address,
-        amount: parseInt(sendAmount),
-        recipient,
-      });
+      } = await server.post(`send`, signedTransaction);
       setBalance(balance);
-    } catch (ex) {
-      alert(ex.response.data.message);
+      alert("done !")
+    } catch (e) {
+      alert(e);
     }
   }
 
@@ -48,7 +66,12 @@ function Transfer({ address, setBalance }) {
           )};
         </select>
 
+        <label>
+          Recipient Address
+        </label>
+    
         <input
+          disabled
           placeholder="Recipient Address"
           value={recipient}
           onChange={setValue(setRecipient)}

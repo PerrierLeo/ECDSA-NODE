@@ -12,6 +12,8 @@ const balances = {
   f4d7a283621854fe7a174715bc9d4d1ff05faf4f: 50,
 };
 
+//think to convert recipient address into publicKey if we can?
+
 app.get("/balance/:address", (req, res) => {
   const { address } = req.params;
   const balance = balances[address] || 0;
@@ -19,18 +21,42 @@ app.get("/balance/:address", (req, res) => {
 });
 
 app.post("/send", (req, res) => {
-  const { sender, recipient, amount } = req.body;
+  const { transaction } = req.body;
+  const { amount, to, from } = transaction;
+  const TARGET_DIFFICULTY =
+    BigInt(0x0fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffn);
 
-  setInitialBalance(sender);
-  setInitialBalance(recipient);
+  //Création du block penser a verifier avant la signature
 
-  if (balances[sender] < amount) {
-    res.status(400).send({ message: "Not enough funds!" });
-  } else {
-    balances[sender] -= amount;
-    balances[recipient] += amount;
-    res.send({ balance: balances[sender] });
+  let block = { transaction };
+  block.nonce = 0;
+  let hash;
+  while (true) {
+    hash = SHA256(JSON.stringify(block)).toString();
+    if (BigInt(`0x${hash}`) < TARGET_DIFFICULTY) {
+      break;
+    }
+    block.nonce++;
   }
+  // transaction.nonce = 0;
+  // let hash;
+
+  // hash = SHA256(JSON.stringify(transaction)).toString();
+
+  // console.log(hash);
+
+  // while (true) {}
+
+  // setInitialBalance(transaction.from);
+  // setInitialBalance(transaction.to);
+
+  // if (balances[from] < amount) {
+  //   res.status(400).send({ message: "Not enough funds!" });
+  // } else {
+  //   balances[from] -= amount;
+  //   balances[to] += amount;
+  //   res.send({ balance: balances[from] });
+  // }
 });
 
 app.listen(port, () => {
