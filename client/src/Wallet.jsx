@@ -4,36 +4,18 @@ import { toHex } from "ethereum-cryptography/utils";
 import { secp256k1 } from "ethereum-cryptography/secp256k1.js";
 import { Data } from "./data";
 
-
-
-
-
-
-function recoveryKey(privateKey, signature, msgHash) {
-  //return publicKey from privateKey
-  const publicKey = secp256k1.getPublicKey(privateKey);
-  //verify if publicKey from hashData match with publicKey from privateKey;
-  const recovered = secp256k1.verify(signature, msgHash, toHex(publicKey));
-  return recovered;
-}
-
-
-
-
-function Wallet({ address, setAddress, balance, setBalance, privateKey, setPrivateKey }) {
-
+function Wallet({ publicKey, setPublicKey, balance, setBalance, privateKey, setPrivateKey }) {
   async function onChange(evt) {
     const privateKey = evt.target.value;
     setPrivateKey(privateKey);
+
     //convert private to public
-    const publicKey = secp256k1.getPublicKey(privateKey.slice(1));
-    //convert public to address
-    const address = toHex(getAddress(publicKey));
-    setAddress(address);
-    if (address) {
+    const publicKey = toHex(secp256k1.getPublicKey(privateKey.slice(1), false));
+    setPublicKey(publicKey);
+    if (publicKey) {
       const {
         data: { balance },
-      } = await server.get(`balance/${address}`);
+      } = await server.get(`balance/${publicKey}`);
       setBalance(balance);
     } else {
       setBalance(0);
@@ -58,7 +40,7 @@ function Wallet({ address, setAddress, balance, setBalance, privateKey, setPriva
       <input
         disabled
           placeholder="Wallet Address"
-          value={address}
+          value={ publicKey ? toHex(getAddress(publicKey)) : ''}
         />
 
       <div className="balance">Balance: {balance}</div>

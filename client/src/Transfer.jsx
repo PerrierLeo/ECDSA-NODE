@@ -1,9 +1,13 @@
 import { useState } from "react";
 import server from "./server";
 import { Data } from "./data";
-import {  signMessage } from "./functions/crypto.functions";
+import { signMessage, getAddress, hashMessage } from "./functions/crypto.functions";
+import { toHex } from "ethereum-cryptography/utils";
+import { utf8ToBytes } from "ethereum-cryptography/utils";
 
-function Transfer({ address, setBalance, privateKey }) {
+
+
+function Transfer({ setBalance, privateKey, publicKey }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
 
@@ -12,38 +16,38 @@ function Transfer({ address, setBalance, privateKey }) {
   async function transfer(evt) {
     evt.preventDefault();
 
-    const transaction = {
-        from: address,
+    const tx = {
+        from: publicKey,
         to: recipient,
         amount: parseInt(sendAmount),
       }
 
     //Sign transaction
-    const sig = signMessage(Uint8Array.from(transaction), privateKey.slice(1));
-    const sigParsed = JSON.parse(JSON.stringify(sig, (value) =>
+    const sig = signMessage(Uint8Array.from(tx), privateKey.slice(1));
+    console.log("sig",sig);
+    const sigParsed = JSON.parse(JSON.stringify(sig, (key, value) =>
             typeof value === 'bigint'
                 ? value.toString()
-                : value // return everything else unchanged
-        ));
+                : value 
+    ));
     
     //send transaction
-    const signedTransaction = {
-      transaction, sigParsed
+    const tmp = {
+      tx, sigParsed
     }
-
 
     try {
       const {
         data: { balance },
-      } = await server.post(`send`, signedTransaction);
+      } = await server.post(`send`, tmp);
       setBalance(balance);
       alert("done !")
     } catch (e) {
-      alert(e);
+      alert(e.response.data.msg);
     }
   }
 
-  
+
   return (
     <form className="container transfer" onSubmit={transfer}>
       <h1>Send Transaction</h1>
@@ -61,8 +65,8 @@ function Transfer({ address, setBalance, privateKey }) {
         Recipient
         <select value={recipient} onChange={setValue(setRecipient)}>
           <option value={null}>--Please choose an recipient--</option>
-          {Data.address.map((e) => e.address != address ?
-          <option  key={e.address} value={e.address}>{e.name}</option> : null
+          {Data.address.map((e, i) => e.publicKey != publicKey ?
+          <option key={i} value={e.publicKey}>{e.name}</option> : null
           )};
         </select>
 
@@ -72,8 +76,8 @@ function Transfer({ address, setBalance, privateKey }) {
     
         <input
           disabled
-          placeholder="Recipient Address"
-          value={recipient}
+          placeholder="Recipient Address" 
+          value={recipient ? toHex(getAddress(recipient)) : ''}
           onChange={setValue(setRecipient)}
         ></input>
       </label>

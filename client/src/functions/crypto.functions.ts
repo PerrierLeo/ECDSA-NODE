@@ -1,18 +1,16 @@
-import { utf8ToBytes } from "ethereum-cryptography/utils";
 import { keccak256 } from "ethereum-cryptography/keccak";
 import { secp256k1 } from "ethereum-cryptography/secp256k1.js";
-import { toHex } from "ethereum-cryptography/utils";
+import { toHex, hexToBytes } from "ethereum-cryptography/utils";
 import { Hex, PrivKey } from "@noble/curves/abstract/utils";
 
 
 
 export function hashMessage(message: string | Uint8Array): Uint8Array {
-  //utf8ToBytes(message) => string to Uint8Array
+  //hexToBytes(message) => string to Uint8Array 
   if (typeof message == "string") {
-    return keccak256(utf8ToBytes(message));
-  } else {
-    return keccak256(message);
+    return keccak256(hexToBytes(message))
   }
+  return keccak256(message);
 }
 
 export function getAddress(publicKey: string | Uint8Array): Uint8Array {
